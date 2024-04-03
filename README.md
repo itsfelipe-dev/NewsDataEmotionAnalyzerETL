@@ -1,0 +1,2 @@
+# WashingtonPostDataETL
+Create a Python-based ETL (Extract, Transform, Load) pipeline utilizing Airflow to extract data from WashingtonPost, analyze the emotions conveyed in the posts, and store the results. The pipeline will fetch articles from WashingtonPost, process the text to extract emotional content using natural language processing techniques, and then load the analyzed data into a database for further analysis or visualization.
