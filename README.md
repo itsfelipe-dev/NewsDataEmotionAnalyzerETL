@@ -5,6 +5,8 @@ The project is currently in its initial development phase, with the first portio
 
 ## Description ℹ️
 
+![Architecture](https://github.com/itsfelipe-dev/NewsDataEmotionAnalyzerETL/blob/master/docs/assets/ELT_architecture.gif?raw=true)
+
 Extract, Transform, and Load (ETL) pipeline designed to gather news articles from [The Washington Post](https://www.washingtonpost.com/),  [The New York Time](https://www.nytimes.com) , and [The Guardian](https://www.theguardian.com/). The extracted data is stored in Amazon S3, then processed using PySpark for cleaning and sanitization. The cleaned data is further analyzed for emotional content using an AI model, and the results are stored in DynamoDB. The entire pipeline is orchestrated and managed using Apache Spark and Apache Airflow within Docker containers. 🚀
 
 ## Components 🔧:
