@@ -49,8 +49,7 @@ class TheGuardian(APIDataExtractor):
         if not offset:
             offset = 1
         return {
-            "fl": "id,web_url,headline,abstract,pub_date,body,section_name,byline,keywords,subsection_name,source",
-            "q": f"NOT= 20cartoon",
+            "show-fields": "byline,trailText,bodyText",
             "order-by": "newest",
             "page-size": self.page_size,
             "page": offset,  #! implement concurrent
