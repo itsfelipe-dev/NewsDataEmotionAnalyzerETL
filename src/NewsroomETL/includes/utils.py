@@ -1,3 +1,5 @@
+import findspark
+findspark.init()
 from pyspark import SparkConf
 from pyspark.sql import SparkSession
 from pyspark.sql.dataframe import DataFrame
@@ -63,7 +65,14 @@ class SparkUtils(object):
         try:
             df.write.mode(mode).partitionBy(partition).parquet(f"s3a://{file_path}")
         except ClientError as e:
-            logging.error(f"Error writing data in S3: {e}")
+
+    def read_s3_parquet(self, file_path: str, spark: SparkSession) -> DataFrame:
+        logging.info(f"Attempting to read parquet from: {file_path}")
+        try:
+            return spark.read.parquet(f"s3a://{file_path}")
+        except Exception as e:
+            logging.error(f"Error reading parquet in S3: {e}, {file_path}")
+            raise
 
 
 def get_env_conf() -> list:
