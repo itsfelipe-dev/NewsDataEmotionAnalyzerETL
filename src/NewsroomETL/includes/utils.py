@@ -9,6 +9,7 @@ import logging
 import boto3
 import yaml
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -36,23 +37,31 @@ class SparkUtils(object):
         return session
 
     def read_s3_json(self, file_path: str, spark: SparkSession) -> DataFrame:
-        logging.info(f"Attempting to read data from: {file_path}")
+        logging.info(f"Attempting to read JSON from: {file_path}")
         try:
             return spark.read.option("inferSchema", "true").json(
                 f"s3a://{file_path}",
                 encoding="utf8",
             )
-        except ClientError as e:
-            logging.error(f"Error writing data in S3: {e}")
-            return None
+        except Exception as e:
+            logging.error(f"Error writing JSON in S3: {e}")
+            raise
 
     def write_s3_json(self, data: list, bucket: str, file_path: str) -> None:
         s3_client = boto3.client("s3")
-        logging.info(f"Attempting to write data in: {bucket}/{file_path}")
+        logging.info(f"Attempting to write JSON in: {bucket}/{file_path}")
         try:
-            s3_client.put_object(Body=json.dumps(data), Bucket=bucket, Key=file_path)
+            s3_client.put_object(
+                Body=json.dumps(data, ensure_ascii=False),
+                Bucket=bucket,
+                Key=file_path,
+                ContentType="application/json",
+                ContentEncoding="utf-8",
+            )
         except ClientError as e:
-            logging.error(f"Error writing data in S3: {e}")
+            logging.error(
+                f"Error writing data JSON S3: {e}, path: {bucket}/{file_path}"
+            )
 
     def write_s3_parquet(
         self,
@@ -61,10 +70,15 @@ class SparkUtils(object):
         mode="overwrite",
         partition="ingestion_date",
     ):
-        logging.info(f"Attempting to write data in: {file_path}")
+        logging.info(f"Attempting to write parquet in: {file_path}")
+        if partition and partition not in df.columns:
+            raise ValueError(
+                f"Partition column '{partition}' not found in DataFrame columns: {df.columns}"
+            )
         try:
             df.write.mode(mode).partitionBy(partition).parquet(f"s3a://{file_path}")
-        except ClientError as e:
+        except Exception as e:
+            logging.error(f"Error writing data in S3: {e}, {file_path}")
 
     def read_s3_parquet(self, file_path: str, spark: SparkSession) -> DataFrame:
         logging.info(f"Attempting to read parquet from: {file_path}")
