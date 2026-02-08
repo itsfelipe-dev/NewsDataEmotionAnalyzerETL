@@ -83,7 +83,7 @@ class APIDataExtractor(object):
                     params=self.sanitize_params(params), raw_response=response.json()
                 )
                 SparkUtils().write_s3_json(
-                    data=response.json(),
+                    data=envelope,
                     bucket=self.bucket_name,
                     file_path=self.file_path,
                 )
