@@ -42,17 +42,17 @@ class TheGuardian(APIDataExtractor):
         self.source = config["data_sources"]["theguardian"]["name"]
         self.api_key = config["data_sources"]["theguardian"]["api_key"]
         self.url = "https://content.guardianapis.com/search?"
-        pass
         super().__init__(category_post, self.url, self.source)
 
-    def get_query_params(self, offset: int) -> dict:
-        if not offset:
-            offset = 1
+    def get_query_params(self) -> dict:
         return {
-            "show-fields": "byline,trailText,bodyText",
+            "show-fields": "byline,headline,standfirst,trailText,body,publication,productionOffice,wordcount,lastModified",
+            "show-tags": "tone,type,keyword,contributor",
+            "show-section": "true",
+            "lang": "en",
             "order-by": "newest",
             "page-size": self.page_size,
-            "page": offset,  #! implement concurrent
+            "page": self.offset,  #! implement concurrent
             "api-key": self.api_key,
-            "section": self.category,
+            "section": self.section,
         }
