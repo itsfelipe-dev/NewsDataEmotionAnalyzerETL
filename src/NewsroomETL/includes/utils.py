@@ -44,7 +44,7 @@ class SparkUtils(object):
                 encoding="utf8",
             )
         except Exception as e:
-            logging.error(f"Error writing JSON in S3: {e}")
+            logging.error(f"Error reading JSON in S3: {e}")
             raise
 
     def write_s3_json(self, data: list, bucket: str, file_path: str) -> None:
