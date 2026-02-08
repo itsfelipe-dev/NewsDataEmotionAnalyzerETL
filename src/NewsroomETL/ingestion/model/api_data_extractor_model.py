@@ -57,10 +57,17 @@ class APIDataExtractor(object):
         self.page_size = 1
 
     def get_file_path(self) -> str:
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        filename = f"{self.category}_{current_date}.json"
-        category_path = f"{self.category}_articles"
-        return f"{self.environment}/{self.bucket_folder}/{category_path}/{filename}"
+    def build_ingestion_envelope(self, params, raw_response):
+        return {
+            "ingested_at": datetime.now(timezone.utc).isoformat(),
+            "source_system": self.bucket_folder,
+            "url": self.url,
+            "request": params,
+            "response_payload": raw_response,
+        }
+
+    def sanitize_params(self, params: dict) -> dict:
+        return {k: v for k, v in params.items() if k not in self.sensitive_keys}
 
     @RateLimiter.quota_limiter(12)
     def extract_and_store_data(self, page: int = 1) -> None:
@@ -72,6 +79,9 @@ class APIDataExtractor(object):
             response = requests.get(self.url, params=params, timeout=10)
             response.raise_for_status()
             try:
+                envelope = self.build_ingestion_envelope(
+                    params=self.sanitize_params(params), raw_response=response.json()
+                )
                 SparkUtils().write_s3_json(
                     data=response.json(),
                     bucket=self.bucket_name,
