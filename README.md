@@ -18,6 +18,16 @@ Extract, Transform, and Load (ETL) pipeline designed to gather news articles fro
 - **Data Persistence**: Stores the emotional analysis results in DynamoDB.
   Orchestration: Manages the entire pipeline using Apache Spark and Apache Airflow within Docker containers.
 
+
+## Data Model 🗄️:
+To ensure scalability, traceability, and efficient querying, the project uses a Star Schema data model optimized for analytical workloads.
+The schema is designed to:
+- Support multiple news sources
+- Preserve source lineage across all entities
+- Enable incremental ingestion, reprocessing, and historical replay
+
+**[Database Diagram](https://dbdiagram.io/d/NewsDataEmotionAnalyzerETL-6988d72cbd82f5fce207e755)**
+
 ## Purpose 🎯:
 
 This project aims to provide a comprehensive ETL pipeline for gathering, processing, and analyzing news data from reputable sources. By incorporating emotional analysis, it enables deeper insights into the sentiment and tone of news articles over time. The use of Docker containers ensures portability and scalability, while Apache Spark and Apache Airflow offer robust orchestration and management capabilities.
