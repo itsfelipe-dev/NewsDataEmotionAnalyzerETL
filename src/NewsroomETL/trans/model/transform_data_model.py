@@ -13,28 +13,24 @@ class DataTransformer(object):
     def __init__(self) -> None:
         self.bucket_output = config["s3"]["bucket_zones"]["silver_zone"]
         self.bucket_input = config["s3"]["bucket_zones"]["bronze_zone"]
-        self.silver_zone_table = "unified_news"
+        self.silver_zone_table = "articles"
         self.environment = config["environment"]
         self.spark_utils = SparkUtils()
         self.spark = self.spark_utils.get_spark_session(app_name=f"DataTransformation")
 
-    def get_path_input_df(self, category_post, ingestion_date, source) -> str:
-        filename = f"{category_post}_{ingestion_date}.json"
-        category_path = f"{category_post}_articles"
-        return f"{self.bucket_input}/{self.environment}/{source}/{category_path}/{filename}"
+    def get_bronze_input_path(self, section, ingestion_date, source) -> str:
+        return f"{self.bucket_input}/{self.environment}/{source}/ingestion_date={ingestion_date}/section={section}/"
 
     def get_path_output_df(self) -> str:
-        return f"{self.bucket_output}/{self.environment}/{self.silver_zone_table}"
+        return f"{self.bucket_output}/{self.environment}/{self.source}/{self.silver_zone_table}"
 
     def get_bronze_df(self, category_post, ingestion_date, source) -> DataFrame:
-        file_path = self.get_path_input_df(category_post, ingestion_date, source)
+        file_path = self.get_bronze_input_path(category_post, ingestion_date, source)
         return self.spark_utils.read_s3_json(file_path, self.spark)
 
     def load_silver_df(self, df: DataFrame):
         path_output_df = self.get_path_output_df()
-        self.spark_utils.write_s3_parquet(
-            df=df, file_path=path_output_df, mode="append"
-        )
+        self.spark_utils.write_delta(df=df, file_path=path_output_df, mode="append")
 
     def standardize_schema(self, df: DataFrame) -> DataFrame:
         return df.select(
