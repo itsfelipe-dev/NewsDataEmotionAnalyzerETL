@@ -2,7 +2,7 @@ import requests
 import logging
 from includes.utils import SparkUtils
 from includes.utils import get_env_conf
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 import time
 import threading
@@ -46,17 +46,22 @@ class RateLimiter:
 
 
 class APIDataExtractor(object):
-    def __init__(self, category_post: str, url: str, source: str) -> None:
+    def __init__(self, section: str, url: str, source: str) -> None:
         self.url = url
-        self.category = category_post
+        self.section = section
         self.bucket_folder = source
         self.bucket_name = config["s3"]["bucket_zones"]["bronze_zone"]
         self.environment = config["environment"]
+        self.offset = 1
+        self.page_size = 5
         self.file_path = self.get_file_path()
         self.bucket_and_file_path = f"{self.bucket_name}/{self.file_path}"
-        self.page_size = 1
+        self.sensitive_keys = {"api-key"}
 
     def get_file_path(self) -> str:
+        ingestion_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        return f"{self.environment}/{self.bucket_folder}/ingestion_date={ingestion_date}/section={self.section}/page={self.offset}.json"
+
     def build_ingestion_envelope(self, params, raw_response):
         return {
             "ingested_at": datetime.now(timezone.utc).isoformat(),
@@ -74,7 +79,7 @@ class APIDataExtractor(object):
         params = self.get_query_params(page)
         try:
             logging.info(
-                f"Extracting data from {self.url}/{self.category} with params: {params}"
+                f"Extracting data from {self.url}/{self.section} with params: {params}"
             )
             response = requests.get(self.url, params=params, timeout=10)
             response.raise_for_status()
