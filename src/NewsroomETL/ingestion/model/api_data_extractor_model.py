@@ -88,12 +88,12 @@ class APIDataExtractor(object):
                     file_path=self.file_path,
                 )
                 logging.info(
-                    f"Successfully stored data in {self.bucket_name}/{self.file_path}"
+                    f"Successfully stored data in: {self.bucket_name}/{self.file_path} length: {len(response.content)}"
                 )
                 return
-            except:
+            except Exception as e:
                 logging.error(
-                    f"Can't store data in  {self.bucket_name}/{self.file_path}"
+                    f"Can't store data in: {self.bucket_name}/{self.file_path} - {e}"
                 )
         except requests.exceptions.RequestException as err:
             logging.error(f"The request had invalid params: {err}")
