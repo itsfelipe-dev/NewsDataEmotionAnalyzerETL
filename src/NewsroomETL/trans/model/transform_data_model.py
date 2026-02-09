@@ -18,14 +18,14 @@ class DataTransformer(object):
         self.spark_utils = SparkUtils()
         self.spark = self.spark_utils.get_spark_session(app_name=f"DataTransformation")
 
-    def get_bronze_input_path(self, section, ingestion_date, source) -> str:
-        return f"{self.bucket_input}/{self.environment}/{source}/ingestion_date={ingestion_date}/section={section}/"
+    def get_bronze_input_path(self, section, ingestion_date) -> str:
+        return f"{self.bucket_input}/{self.environment}/{self.source}/ingestion_date={ingestion_date}/section={section}/"
 
     def get_path_output_df(self) -> str:
         return f"{self.bucket_output}/{self.environment}/{self.source}/{self.silver_zone_table}"
 
-    def get_bronze_df(self, category_post, ingestion_date, source) -> DataFrame:
-        file_path = self.get_bronze_input_path(category_post, ingestion_date, source)
+    def get_bronze_df(self, category_post, ingestion_date) -> DataFrame:
+        file_path = self.get_bronze_input_path(category_post, ingestion_date)
         return self.spark_utils.read_s3_json(file_path, self.spark)
 
     def load_silver_df(self, df: DataFrame):
