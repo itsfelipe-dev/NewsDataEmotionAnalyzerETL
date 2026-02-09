@@ -28,7 +28,7 @@ class RateLimiter:
                     elapsed_time = time.time() - RateLimiter.last_call_time
                     if elapsed_time < quota_seconds:
                         remaining_time = quota_seconds - elapsed_time
-                        logging.warning(
+                        logger.warning(
                             f"Quota limit reached. Please wait {remaining_time:.2f} seconds."
                         )
                         for i in range(int(remaining_time), 0, -1):
@@ -76,9 +76,9 @@ class APIDataExtractor(object):
 
     @RateLimiter.quota_limiter(12)
     def extract_and_store_data(self, page: int = 1) -> None:
-        params = self.get_query_params(page)
+        params = self.get_query_params()
         try:
-            logging.info(
+            logger.info(
                 f"Extracting data from {self.url}/{self.section} with params: {params}"
             )
             response = requests.get(self.url, params=params, timeout=10)
@@ -92,13 +92,13 @@ class APIDataExtractor(object):
                     bucket=self.bucket_name,
                     file_path=self.file_path,
                 )
-                logging.info(
+                logger.info(
                     f"Successfully stored data in: {self.bucket_name}/{self.file_path} length: {len(response.content)}"
                 )
                 return
             except Exception as e:
-                logging.error(
+                logger.error(
                     f"Can't store data in: {self.bucket_name}/{self.file_path} - {e}"
                 )
         except requests.exceptions.RequestException as err:
-            logging.error(f"The request had invalid params: {err}")
+            logger.error(f"The request had invalid params: {err}")
