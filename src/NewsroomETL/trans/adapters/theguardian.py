@@ -126,7 +126,7 @@ class TheGuardianAdapter(DataTransformer):
             "media": self.extract_media(bronze_df),
         }
 
-    def process(self, bronze_df):
+    def process(self, bronze_df, table_to_process=None):
         try:
             base_df = bronze_df.select(
                 col("source_system"),
@@ -144,9 +144,16 @@ class TheGuardianAdapter(DataTransformer):
                 "content":  self.extract_content,
             }
 
+            if table_to_process:
+                targets = {
+                    table_to_process: extractions[table_to_process]
+                }
+            else:
+                targets = extractions
+
             results = {}
 
-            for table_name, extract_func in extractions.items():
+            for table_name, extract_func in targets.items():
                 logger.info(f"Parsing schema for table: {table_name}...")
                 results[table_name] = extract_func(base_df)
                 cols = results[table_name].columns
