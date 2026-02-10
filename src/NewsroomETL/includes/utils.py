@@ -21,10 +21,21 @@ class SparkUtils(object):
         conf = SparkConf()
         conf.setAll(
             [
-                ("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.2.2"),
+                (
+                    "spark.jars.packages",
+                    "io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.2.2",
+                ),
                 (
                     "spark.hadoop.fs.s3a.aws.credentials.provider",
                     "com.amazonaws.auth.profile.ProfileCredentialsProvider",
+                ),
+                (
+                    "spark.sql.catalog.spark_catalog",
+                    "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+                ),
+                (
+                    "spark.sql.extensions",
+                    "io.delta.sql.DeltaSparkSessionExtension",
                 ),
             ]
         )
