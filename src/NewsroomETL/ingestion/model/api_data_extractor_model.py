@@ -46,21 +46,10 @@ class RateLimiter:
 
 
 class APIDataExtractor(object):
-    def __init__(self, section: str, url: str, source: str) -> None:
+    def __init__(self, url: str, source: str) -> None:
         self.url = url
-        self.section = section
         self.bucket_folder = source
-        self.bucket_name = config["s3"]["bucket_zones"]["bronze_zone"]
-        self.environment = config["environment"]
-        self.offset = 1
-        self.page_size = 5
-        self.file_path = self.get_file_path()
-        self.bucket_and_file_path = f"{self.bucket_name}/{self.file_path}"
         self.sensitive_keys = {"api-key"}
-
-    def get_file_path(self) -> str:
-        ingestion_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        return f"{self.environment}/{self.bucket_folder}/ingestion_date={ingestion_date}/section={self.section}/page={self.offset}.json"
 
     def build_ingestion_envelope(self, params, raw_response):
         return {
@@ -75,30 +64,19 @@ class APIDataExtractor(object):
         return {k: v for k, v in params.items() if k not in self.sensitive_keys}
 
     @RateLimiter.quota_limiter(12)
-    def extract_and_store_data(self, page: int = 1) -> None:
-        params = self.get_query_params()
+    def get_data(self, params) -> dict:
         try:
+            sanitize_params = self.sanitize_params(params)
             logger.info(
-                f"Extracting data from {self.url}/{self.section} with params: {params}"
+                f"Extracting data from {self.url}/{self.section} with params: {sanitize_params}"
             )
+
             response = requests.get(self.url, params=params, timeout=10)
             response.raise_for_status()
-            try:
-                envelope = self.build_ingestion_envelope(
-                    params=self.sanitize_params(params), raw_response=response.json()
-                )
-                SparkUtils().write_s3_json(
-                    data=envelope,
-                    bucket=self.bucket_name,
-                    file_path=self.file_path,
-                )
-                logger.info(
-                    f"Successfully stored data in: {self.bucket_name}/{self.file_path} length: {len(response.content)}"
-                )
-                return
-            except Exception as e:
-                logger.error(
-                    f"Can't store data in: {self.bucket_name}/{self.file_path} - {e}"
-                )
-        except requests.exceptions.RequestException as err:
-            logger.error(f"The request had invalid params: {err}")
+
+            return self.build_ingestion_envelope(
+                params=sanitize_params, raw_response=response.json()
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"The request had invalid params: {self.url} - {e}")
+            raise

@@ -1,14 +1,16 @@
-from ingestion.washington_post_data import WashingtonPostData
-from trans.transform_data import TransformData
+from datetime import datetime
+from includes.utils import get_env_conf
+from ingestion.bronze_orchestrator import BronzeOrchestaror
 
+config = get_env_conf()
 
-# import includes.configuration as configuration
 def main() -> None:
+    sources = config["data_sources"]
+    bronze_orch = BronzeOrchestaror()
+    for source in sources:
+        bronze_orch.run(source)
 
-    wp_data = WashingtonPostData()
-    data = wp_data.extract_data(5)
-    # transformed_data = TransformData(path_data) 
-    # presentation =  # website
+
 
 
 if __name__ == "__main__":
