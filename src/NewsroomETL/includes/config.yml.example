@@ -1,0 +1,36 @@
+# ------------------------------------------------------------
+# Data source definitions
+# Each source represents an external system integrated
+# into the ingestion layer
+# ------------------------------------------------------------
+data_sources:
+  nytimes:
+    name: "new_york_times"        # Logical source identifier
+    api_key: ""                   # Inject via local config
+    secret: ""
+
+  theguardian:
+    name: "the_guardian"
+    api_key: ""
+
+  wp:
+    name: "washington_post"
+
+
+# ------------------------------------------------------------
+# S3 bucket zones following a medallion architecture
+# ------------------------------------------------------------
+s3:
+  bucket_zones:
+    bronze_zone: "<BRONZE_BUCKET_NAME>"
+    silver_zone: "<SILVER_BUCKET_NAME>"
+    gold_zone: "<GOLD_BUCKET_NAME>"
+    metadata: "<METADATA_BUCKET_NAME>"
+
+
+# ------------------------------------------------------------
+# Runtime environment
+# Used as a prefix for all storage paths to isolate deployments
+# Example: s3://<bucket>/<environment>/
+# ------------------------------------------------------------
+environment: "dev"   # dev | staging | prod
