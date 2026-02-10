@@ -27,12 +27,12 @@ class NyTimes(APIDataExtractor):
         self.url = "https://api.nytimes.com/svc/search/v2/articlesearch.json"
         super().__init__(category_post, self.url, self.source)
 
-    def get_query_params(self, page: int) -> dict:
+    def get_query_params(self) -> dict:
         return {
-            "fl": "id,web_url,headline,abstract,pub_date,body,section_name,byline,keywords,subsection_name,source",
-            "fq": f"section_name={self.category}",
+            "fl": "id,web_url,headline,abstract,pub_date,body,section_name,byline,keywords,subsection_name,source,desk,multimedia,type_of_material",
+            "fq": f"section_name={self.section}",
             "sort": "newest",
-            "page": page,  #! implement concurrent
+            "page": self.offset,  #! implement concurrent
             "api-key": self.api_key,
         }
 
@@ -49,6 +49,7 @@ class TheGuardian(APIDataExtractor):
             "show-fields": "byline,headline,standfirst,trailText,body,publication,productionOffice,wordcount,lastModified",
             "show-tags": "tone,type,keyword,contributor",
             "show-section": "true",
+            "show-elements": "audio,image",
             "lang": "en",
             "order-by": "newest",
             "page-size": self.page_size,
