@@ -2,13 +2,10 @@ import logging
 from includes.utils import SparkUtils
 from pyspark.sql.functions import col, explode, lit
 from pyspark.sql.dataframe import DataFrame
-from includes.utils import get_env_conf
-from ..model.transform_data_model import DataTransformer
 
 logger = logging.getLogger(__name__)
 
 
-config = get_env_conf()
 spark_utils = SparkUtils()
 
 
@@ -21,6 +18,7 @@ class TheGuardianAdapter():
             col("article.id").alias("source_article_id"),
             col("source_system"),
             col("article.apiUrl").alias("url"),
+            col("article.sectionId").alias("source_section_id"),
             col("article.fields.headline").alias("headline"),
             col("article.webPublicationDate").alias("publication_date"),
             col("ingestion_date"),
@@ -33,7 +31,7 @@ class TheGuardianAdapter():
         return df_raw.select(
             col("source_system"),
             col("article.sectionId").alias("source_section_id"),
-            col("article.sectionId").alias("section_name"),
+            col("article.sectionName").alias("section_name"),
             lit(None).alias("subsection_name"),
         )
 
@@ -60,6 +58,7 @@ class TheGuardianAdapter():
         return df_raw.select(
             col("source_system"), explode("article.tags").alias("tags")
         ).select(
+            col("source_system"),
             col("tags.type").alias("tag_type"),
             col("tags.webTitle").alias("tag_value"),
         )
@@ -96,7 +95,6 @@ class TheGuardianAdapter():
                 lit(None).alias("is_primary"),
                 col("assets.typeData.width").alias("with"),
                 col("assets.typeData.height").alias("height"),
-                col("assets.typeData.height").alias("height"),
                 col("relation"),
                 lit(None).alias("duration_seconds"),
                 lit(None).alias("thumbnail_url"),
@@ -113,17 +111,35 @@ class TheGuardianAdapter():
             col("article.fields.lastModified").alias("last_modfied"),
         )
 
-    def process(self, bronze_df: DataFrame):
-        return {
-            "articles": self.extract_articles(bronze_df),
-            "sections": self.extract_sections(bronze_df),
-            "authors": self.extract_authors(bronze_df),
-            "tags": self.extract_tags(bronze_df),
-            "article_authors": self.extract_authors(bronze_df),
-            "article_tags": self.extract_tags(bronze_df),
-            "content": self.extract_content(bronze_df),
-            "media": self.extract_media(bronze_df),
-        }
+    def extract_article_authors(self, df_raw: DataFrame) -> DataFrame:
+        return (
+            df_raw.select(
+                col("source_system"),
+                col("article.id").alias("source_article_id"),
+                explode("article.tags").alias("tag"),
+            )
+            .filter(col("tag.type") == "contributor").select(
+                "source_system",
+                "source_article_id",
+                col("tag.id").alias("source_author_id"),
+            )
+        )
+
+    def extract_article_tags(self, df_raw: DataFrame) -> DataFrame:
+        return (
+            df_raw.select(
+                col("source_system"),
+                col("article.id").alias("source_article_id"),
+                explode("article.tags").alias("tag"),
+            )
+            .filter(col("tag.type") != "contributor")
+            .select(
+                "source_system",
+                "source_article_id",
+                col("tag.type").alias("tag_type"),
+                col("tag.webTitle").alias("tag_value"),
+            )
+        )
 
     def process(self, bronze_df, table_to_process=None):
         try:
@@ -135,18 +151,18 @@ class TheGuardianAdapter():
 
             extractions = {
                 "articles": self.extract_articles,
-                "authors":  self.extract_authors,
-                "tags":     self.extract_tags,
-                "media":    self.extract_media,
+                "authors": self.extract_authors,
+                "tags": self.extract_tags,
+                "article_media": self.extract_media,
                 "sections": self.extract_sections,
-                "sources":  self.extract_sources,
-                "content":  self.extract_content,
+                "sources": self.extract_sources,
+                "article_content": self.extract_content,
+                "article_authors": self.extract_article_authors,
+                "article_tags": self.extract_article_tags,
             }
 
             if table_to_process:
-                targets = {
-                    table_to_process: extractions[table_to_process]
-                }
+                targets = {table_to_process: extractions[table_to_process]}
             else:
                 targets = extractions
 
