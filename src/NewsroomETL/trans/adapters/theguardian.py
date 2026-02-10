@@ -12,10 +12,9 @@ config = get_env_conf()
 spark_utils = SparkUtils()
 
 
-class TheGuardianAdapter(DataTransformer):
-    def __init__(self) -> None:
-        self.source = config["data_sources"]["theguardian"]["name"]
-        super().__init__()
+class TheGuardianAdapter():
+    def __init__(self, source_name: str):
+        self.source_name = source_name
 
     def extract_articles(self, df_raw: DataFrame) -> DataFrame:
         return df_raw.select(
