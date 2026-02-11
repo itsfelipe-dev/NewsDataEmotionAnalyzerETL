@@ -13,11 +13,12 @@ class DeltaWriter:
         file_path: str,
         pk_col: str = None,
         partition_cols: list = None,
+        force_overwrite: bool = False,
     ) -> None:
         full_path = f"s3a://{file_path}"
 
         # Overwrite
-        if not DeltaTable.isDeltaTable(spark, full_path):
+        if not DeltaTable.isDeltaTable(spark, full_path) or force_overwrite == True:
             logger.info(f"Table {file_path} does not exist. Performing initial write")
             writer = df.write.format("delta").mode("overwrite")
             if partition_cols:
@@ -33,6 +34,4 @@ class DeltaWriter:
                 df.alias("updates"), f"target.{pk_col} = updates.{pk_col}"
             ).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
         else:
-            logger.warning(
-                f"No PK defined for {file_path} Skip writing"
-            )
+            logger.warning(f"No PK defined for {file_path} Skip writing")
