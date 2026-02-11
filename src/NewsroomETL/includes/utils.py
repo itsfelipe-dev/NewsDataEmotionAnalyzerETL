@@ -10,7 +10,13 @@ logger = logging.getLogger(__name__)
 
 
 class SparkUtils(object):
+    def __init__(self):
+        self.session = None
+
     def get_spark_session(self, app_name) -> SparkSession:
+        if self.session:
+            return self.session
+
         conf = SparkConf()
         conf.setAll(
             [
@@ -32,13 +38,18 @@ class SparkUtils(object):
                 ),
             ]
         )
-        session = (
+        self.session = (
             SparkSession.builder.master("local[*]")
             .appName(app_name)
             .config(conf=conf)
             .getOrCreate()
         )
-        return session
+        return self.session
+
+    def stop_spark_session(self) -> None:
+        if self.session:
+            self.session.stop()
+            self.session = None
 
 
 def get_env_conf() -> list:
