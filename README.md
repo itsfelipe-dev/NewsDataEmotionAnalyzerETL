@@ -1,22 +1,34 @@
-# News Data ETL with Emotion Analysis 📰
-
-## Initial Development Phase 🛠️:
-The project is currently in its initial development phase, with the first portion implemented. At this stage, data extraction from articles post has been successfully completed, and the extracted data is stored in Amazon S3. The next steps will involve expanding the extraction process to include additional news sources, implementing data processing using PySpark, and integrating emotion analysis with an AI model. Contributions and feedback are welcome as the project progresses. Stay tuned for updates!
+# News Data ETL: AI-Powered Emotion Analyzer 📰
+A modular multi-source ETL following the **Medallion Architectur**e. It extracts news data from global APIs, transforms it into structured analytical tables via **PySpark**, and prepares high-quality datasets for **AI-driven** sentiment and emotion analysis.
 
 ## Description ℹ️
 
 ![Architecture](https://github.com/itsfelipe-dev/NewsDataEmotionAnalyzerETL/blob/master/docs/assets/ELT_architecture.gif?raw=true)
 
-Extract, Transform, and Load (ETL) pipeline designed to gather news articles from [The Washington Post](https://www.washingtonpost.com/),  [The New York Time](https://www.nytimes.com) , and [The Guardian](https://www.theguardian.com/). The extracted data is stored in Amazon S3, then processed using PySpark for cleaning and sanitization. The cleaned data is further analyzed for emotional content using an AI model, and the results are stored in DynamoDB. The entire pipeline is orchestrated and managed using Apache Spark and Apache Airflow within Docker containers. 🚀
+This is an Extract, Transform, and Load (ETL) pipeline designed to gather news articles from [The Washington Post](https://www.washingtonpost.com/),  [The New York Time](https://www.nytimes.com) , and [The Guardian](https://www.theguardian.com/).
+ 
+Implements a modular design lifecycle managed via source-agnostic (allow for adding new news sources by just creating a new adapter class):
 
-## Components 🔧:
+**Bronze:** 
+- **Data Extraction:** Get articles using a Strategy Pattern with dedicated adapters for The Washington Post, The New York Times, and The Guardian.
 
-- **Data Extraction**: Scrapes articles from The Washington Post, The New York Times, and The Guardian.
-- **Data Storage**: Stores extracted articles in Amazon S3.
-  Data Processing: Utilizes PySpark for cleaning and sanitization of the extracted data.
-- **Emotion Analysis**: Applies an AI model to analyze the emotional content of each article.
-- **Data Persistence**: Stores the emotional analysis results in DynamoDB.
-  Orchestration: Manages the entire pipeline using Apache Spark and Apache Airflow within Docker containers.
+- **Data Storage:** Persists raw JSON responses in Amazon S3 using Hive-style partitioning 
+
+**Silver:** 
+- **Data Processing:** Employs PySpark to transform raw JSON into optimized Delta Lake tables.
+
+- **Purification:** Handles HTML stripping (BeautifulSoup), text normalization, and schema enforcement.
+
+- **Referential Integrity:** Generates deterministic Surrogate Keys (SHA-256) to tables across the lake.
+
+**Gold**: (WIP) 
+- **Emotion Analysis:** Applies an AI model to analyze the emotional content and sentiment of sanitized articles.
+
+- **Data Persistence:** Stores the final high-value emotional insights in DynamoDB for fast, low-latency access by the dashboard.
+
+- **Aggregated Views:** Creates trend reports and cross-source sentiment comparisons.
+
+
 
 
 ## Data Model 🗄️:
