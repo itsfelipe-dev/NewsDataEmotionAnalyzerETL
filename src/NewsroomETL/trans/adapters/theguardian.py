@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 spark_utils = SparkUtils()
 
 
-class TheGuardianAdapter():
+class TheGuardianAdapter:
     def __init__(self, source_name: str):
         self.source_name = source_name
 
@@ -21,10 +21,10 @@ class TheGuardianAdapter():
             col("article.sectionId").alias("source_section_id"),
             col("article.fields.headline").alias("headline"),
             col("article.webPublicationDate").alias("publication_date"),
-            col("ingestion_date"),
             col("article.sectionId").alias("section_id"),
             lit(True).alias("is_live"),
             col("article.fields.wordcount").alias("wordcount"),
+            col("ingestion_date"),
         )
 
     def extract_sections(self, df_raw: DataFrame) -> DataFrame:
@@ -33,11 +33,14 @@ class TheGuardianAdapter():
             col("article.sectionId").alias("source_section_id"),
             col("article.sectionName").alias("section_name"),
             lit(None).alias("subsection_name"),
+            col("ingestion_date"),
         )
 
     def extract_authors(self, df_raw: DataFrame) -> DataFrame:
         df_tags = df_raw.select(
-            col("source_system"), explode("article.tags").alias("tags")
+            col("ingestion_date"),
+            col("source_system"),
+            explode("article.tags").alias("tags"),
         ).filter(col("tags.type") == "contributor")
 
         if "twitterHandle" not in df_tags.select("tags.*").columns:
@@ -52,15 +55,19 @@ class TheGuardianAdapter():
             col("tags.lastName").alias("last_name"),
             col("tags.bio").alias("bio"),
             col("twitter_handle"),
+            col("ingestion_date"),
         )
 
     def extract_tags(self, df_raw: DataFrame) -> DataFrame:
         return df_raw.select(
-            col("source_system"), explode("article.tags").alias("tags")
+            col("ingestion_date"),
+            col("source_system"),
+            explode("article.tags").alias("tags"),
         ).select(
             col("source_system"),
             col("tags.type").alias("tag_type"),
             col("tags.webTitle").alias("tag_value"),
+            col("ingestion_date"),
         )
 
     def extract_sources(self, df_raw: DataFrame) -> DataFrame:
@@ -68,17 +75,20 @@ class TheGuardianAdapter():
             col("source_system"),
             lit("The Guardian").alias("source_name"),
             col("article.apiUrl").alias("api_url"),
+            col("ingestion_date"),
         )
 
     def extract_media(self, df_raw: DataFrame) -> DataFrame:
         return (
             df_raw.select(
                 col("source_system"),
+                col("ingestion_date"),
                 col("article.id").alias("source_article_id"),
                 explode("article.elements").alias("elements"),
             )
             .select(
                 col("source_system"),
+                col("ingestion_date"),
                 col("source_article_id"),
                 col("elements.relation").alias("relation"),
                 explode("elements.assets").alias("assets"),
@@ -93,11 +103,12 @@ class TheGuardianAdapter():
                 col("assets.typeData.credit").alias("credit"),
                 lit(None).alias("position"),
                 lit(None).alias("is_primary"),
-                col("assets.typeData.width").alias("with"),
+                col("assets.typeData.width").alias("width"),
                 col("assets.typeData.height").alias("height"),
                 col("relation"),
                 lit(None).alias("duration_seconds"),
                 lit(None).alias("thumbnail_url"),
+                col("ingestion_date"),
             )
         )
 
@@ -109,18 +120,22 @@ class TheGuardianAdapter():
             col("article.fields.standfirst").alias("summary_text"),
             col("article.fields.trailText").alias("trail_text"),
             col("article.fields.lastModified").alias("last_modfied"),
+            col("ingestion_date"),
         )
 
     def extract_article_authors(self, df_raw: DataFrame) -> DataFrame:
         return (
             df_raw.select(
                 col("source_system"),
+                col("ingestion_date"),
                 col("article.id").alias("source_article_id"),
                 explode("article.tags").alias("tag"),
             )
-            .filter(col("tag.type") == "contributor").select(
-                "source_system",
-                "source_article_id",
+            .filter(col("tag.type") == "contributor")
+            .select(
+                col("source_system"),
+                col("source_article_id"),
+                col("ingestion_date"),
                 col("tag.id").alias("source_author_id"),
             )
         )
@@ -129,13 +144,15 @@ class TheGuardianAdapter():
         return (
             df_raw.select(
                 col("source_system"),
+                col("ingestion_date"),
                 col("article.id").alias("source_article_id"),
                 explode("article.tags").alias("tag"),
             )
             .filter(col("tag.type") != "contributor")
             .select(
-                "source_system",
-                "source_article_id",
+                col("source_system"),
+                col("source_article_id"),
+                col("ingestion_date"),
                 col("tag.type").alias("tag_type"),
                 col("tag.webTitle").alias("tag_value"),
             )
@@ -177,5 +194,5 @@ class TheGuardianAdapter():
             return results
 
         except Exception as e:
-            logger.error(f"Pipeline failed during extraction phase")
+            logger.error(f"Pipeline failed during extraction phase {e}")
             raise RuntimeError("TheGuardianAdapter.process failed") from e
